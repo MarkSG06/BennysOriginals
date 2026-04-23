@@ -1,6 +1,7 @@
 const sequelizeDb = require('../../models/sequelize')
 const User = sequelizeDb.User
 const Op = sequelizeDb.Sequelize.Op
+const bcrypt = require('bcryptjs')
 
 exports.create = async (req, res, next) => {
   try {
@@ -33,7 +34,7 @@ exports.findAll = async (req, res, next) => {
 
     const result = await User.findAndCountAll({
       where: condition,
-      attributes: ['id', 'name', 'email', 'password', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'name', 'password', 'createdAt', 'updatedAt'],
       limit,
       offset,
       order: [['createdAt', 'DESC']]
@@ -109,6 +110,38 @@ exports.delete = async (req, res, next) => {
     res.status(200).send({
       message: 'El elemento ha sido borrado correctamente.'
     })
+  } catch (err) {
+    next(err)
+  }
+}
+
+exports.login = async (req, res, next) => {
+  try {
+    const { name, password, remember } = req.body
+    const user = await User.findOne({ where: { name } })
+
+    if (!user) {
+      const err = new Error()
+      err.message = `No se puede encontrar el usuario con el name=${name}.`
+      err.statusCode = 404
+      throw err
+    }
+
+    let isPasswordValid = false
+    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$') || user.password.startsWith('$2y$')) {
+      isPasswordValid = await bcrypt.compare(password, user.password)
+    } else {
+      isPasswordValid = password === user.password
+    }
+
+    if (!isPasswordValid) {
+      const err = new Error()
+      err.message = `La contraseña es inválida para el usuario=${name}.`
+      err.statusCode = 401
+      throw err
+    }
+
+    res.status(200).send(user)
   } catch (err) {
     next(err)
   }
