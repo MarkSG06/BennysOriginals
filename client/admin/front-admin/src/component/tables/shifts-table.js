@@ -1,11 +1,11 @@
 import { store } from '../../redux/store.js'
 import { showFormElement } from '../../redux/crud-slice.js'
 
-class UserTable extends HTMLElement {
+class ShiftTable extends HTMLElement {
   constructor() {
     super()
     this.shadow = this.attachShadow({ mode: 'open' })
-    this.endpoint = '/api/admin/users'
+    this.endpoint = '/api/admin/shifts'
     this.filterQuery = null
     this.unsubscribe = null
   }
@@ -329,21 +329,21 @@ class UserTable extends HTMLElement {
       const ul = document.createElement('ul')
       data.appendChild(ul)
 
-      const name = document.createElement('li')
-      const nameLabel = document.createElement('span')
-      nameLabel.textContent = 'Nombre: '
-      nameLabel.style.fontWeight = 'bold'
-      name.appendChild(nameLabel)
-      name.append(` ${element.name}`)
-      ul.appendChild(name)
+      const user_id = document.createElement('li')
+      const user_idLabel = document.createElement('span')
+      user_idLabel.textContent = 'Usuario: '
+      user_idLabel.style.fontWeight = 'bold'
+      user_id.appendChild(user_idLabel)
+      user_id.append(` ${element.User ? element.User.name : 'Desconocido'}`)
+      ul.appendChild(user_id)
 
-      const password = document.createElement('li')
-      const passwordLabel = document.createElement('span')
-      passwordLabel.textContent = 'Contraseña: '
-      passwordLabel.style.fontWeight = 'bold'
-      password.appendChild(passwordLabel)
-      password.append(` ${element.password}`)
-      ul.appendChild(password)
+      const date = document.createElement('li')
+      const dateLabel = document.createElement('span')
+      dateLabel.textContent = 'Fecha: '
+      dateLabel.style.fontWeight = 'bold'
+      date.appendChild(dateLabel)
+      date.append(` ${element.date}`)
+      ul.appendChild(date)
     })
 
     this.renderButtons()
@@ -418,4 +418,4 @@ class UserTable extends HTMLElement {
   }
 }
 
-customElements.define('users-table-component', UserTable)
+customElements.define('shifts-table-component', ShiftTable)

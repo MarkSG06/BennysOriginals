@@ -14,4 +14,9 @@ import './component/filters/users-filter.js'
 import './component/filters/customers-filter.js'
 import './component/forms/customers-form.js'
 import './component/tables/customers-table.js'
+// SHIFTS
+import './component/tables/shifts-table.js'
+import './component/filters/shifts-filter.js'
+import './component/forms/shifts-form.js'
+
 

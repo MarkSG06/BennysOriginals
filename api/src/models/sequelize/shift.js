@@ -1,5 +1,5 @@
 module.exports = function (sequelize, DataTypes) {
-  const Model = sequelize.define('Customer',
+  const Model = sequelize.define('Shift',
     {
       id: {
         type: DataTypes.INTEGER,
@@ -7,18 +7,29 @@ module.exports = function (sequelize, DataTypes) {
         primaryKey: true,
         allowNull: false
       },
-      name: {
-        type: DataTypes.STRING,
-        allowNull: false
-      },
-      email: {
-        type: DataTypes.STRING,
+      user_id: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-        unique: true
+        references: {
+          model: 'users',
+          key: 'id'
+        }
       },
-      password: {
-        type: DataTypes.STRING,
+      date: {
+        type: DataTypes.DATE,
         allowNull: false
+      },
+      start_time: {
+        type: DataTypes.TIME,
+        allowNull: true
+      },
+      end_time: {
+        type: DataTypes.TIME,
+        allowNull: true
+      },
+      total_minutes: {
+        type: DataTypes.TIME,
+        allowNull: true
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -38,7 +49,7 @@ module.exports = function (sequelize, DataTypes) {
       }
     }, {
     sequelize,
-    tableName: 'customers',
+    tableName: 'shifts',
     timestamps: true,
     paranoid: true,
     indexes: [
@@ -55,7 +66,7 @@ module.exports = function (sequelize, DataTypes) {
   )
 
   Model.associate = function (models) {
-
+    Model.belongsTo(models.User, { foreignKey: 'user_id', as: 'User' })
   }
 
   return Model

@@ -2,11 +2,11 @@ import isEqual from 'lodash-es/isEqual'
 import { store } from '../../redux/store.js'
 import { refreshTable, showFormElement } from '../../redux/crud-slice.js'
 
-class UserForm extends HTMLElement {
+class ShiftForm extends HTMLElement {
   constructor() {
     super()
     this.shadow = this.attachShadow({ mode: 'open' })
-    this.endpoint = '/api/admin/users'
+    this.endpoint = '/api/admin/shifts'
     this.unsubscribe = null
     this.formElementData = null
   }
@@ -205,6 +205,9 @@ class UserForm extends HTMLElement {
             <div class="tab active-tab" data-tab="general">
               <span>General</span>
             </div>
+            <div class="tab" data-tab="images">
+              <span>Imágenes</span>
+            </div>
           </div>
           <div class="toolbarSVGs">
             <div class="button clean-button">
@@ -242,26 +245,59 @@ class UserForm extends HTMLElement {
             <input type="hidden" name="id">
             <div class="tab-content active" data-tab="general">
               <div class="fieldGroup">
-                <label for="name">Usuario</label>
-                <input type="text" id="name" name="name">
+                <label for="user_id">Usuario</label>
+                <input type="number" id="user_id" name="user_id">
               </div>
               <div class="fieldGroup">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" name="password">
+                <label for="date">Fecha</label>
+                <input type="date" id="date" name="date">
               </div>
               <div class="fieldGroup">
-                <label for="role">Role</label>
-                <input type="text" id="role" name="role">
+                <label for="start_time">Hora Inicio</label>
+                <input type="time" id="start_time" name="start_time">
               </div>
               <div class="fieldGroup">
-                <label for="job_position_id">Puesto de trabajo</label>
-                <input type="text" id="job_position_id" name="job_position_id">
+                <label for="end_time">Hora Fin</label>
+                <input type="time" id="end_time" name="end_time">
+              </div>
+              <div class="fieldGroup">
+                <label for="total_minutes">Horas Totales</label>
+                <input type="time" id="total_minutes" name="total_minutes">
               </div>
             </div>
           </form>
         </div>
       </div>
     `
+    const start_time = this.shadow.querySelector('[name="start_time"]')
+    const end_time = this.shadow.querySelector('[name="end_time"]')
+    const total_minutes = this.shadow.querySelector('[name="total_minutes"]')
+
+    function toMinutes(time) {
+      const [h, m] = time.split(':').map(Number)
+      return h * 60 + m
+    }
+
+    function toHHMM(totalMinutes) {
+      const h = Math.floor(totalMinutes / 60)
+      const m = totalMinutes % 60
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+    }
+
+    function calculate() {
+      if (!start_time.value || !end_time.value) return
+
+      let start = toMinutes(start_time.value)
+      let end = toMinutes(end_time.value)
+      let total = end - start
+
+      if (total < 0) total += 24 * 60
+      total_minutes.value = toHHMM(total)
+    }
+
+    start_time.addEventListener('change', calculate)
+    end_time.addEventListener('change', calculate)
+
 
     this.renderButtons()
   }
@@ -384,4 +420,4 @@ class UserForm extends HTMLElement {
   }
 }
 
-customElements.define('users-form-component', UserForm)
+customElements.define('shifts-form-component', ShiftForm)

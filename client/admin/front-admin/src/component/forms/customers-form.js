@@ -294,7 +294,10 @@ class CustomerForm extends HTMLElement {
         try {
           const response = await fetch(endpoint, {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
             body: JSON.stringify(formDataJson)
           })
 

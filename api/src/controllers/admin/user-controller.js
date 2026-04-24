@@ -2,6 +2,7 @@ const sequelizeDb = require('../../models/sequelize')
 const User = sequelizeDb.User
 const Op = sequelizeDb.Sequelize.Op
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 exports.create = async (req, res, next) => {
   try {
@@ -118,6 +119,7 @@ exports.delete = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { name, password, remember } = req.body
+
     const user = await User.findOne({ where: { name } })
 
     if (!user) {
@@ -128,7 +130,12 @@ exports.login = async (req, res, next) => {
     }
 
     let isPasswordValid = false
-    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$') || user.password.startsWith('$2y$')) {
+
+    if (
+      user.password.startsWith('$2a$') ||
+      user.password.startsWith('$2b$') ||
+      user.password.startsWith('$2y$')
+    ) {
       isPasswordValid = await bcrypt.compare(password, user.password)
     } else {
       isPasswordValid = password === user.password
@@ -141,7 +148,27 @@ exports.login = async (req, res, next) => {
       throw err
     }
 
-    res.status(200).send(user)
+    const token = jwt.sign(
+      {
+        id: user.id,
+        name: user.name,
+        role: user.role
+      },
+      process.env.JWT_SECRET || 'secret_key',
+      {
+        expiresIn: remember ? '30d' : '1d'
+      }
+    )
+
+    await user.update({ token })
+
+    res.status(200).send({
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      token
+    })
+
   } catch (err) {
     next(err)
   }

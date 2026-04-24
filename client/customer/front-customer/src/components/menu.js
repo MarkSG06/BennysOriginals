@@ -189,8 +189,13 @@ class Menu extends HTMLElement {
                 </ul>
             </nav>
         </section>
+        <slot></slot>
     `
-
+        const logout = this.shadow.querySelector('.logout')
+        logout.addEventListener('click', () => {
+            localStorage.removeItem('token')
+            window.location.href = '/'
+        })
     }
 }
 

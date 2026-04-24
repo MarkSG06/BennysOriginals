@@ -1,11 +1,11 @@
 const sequelizeDb = require('../../models/sequelize')
-const Customer = sequelizeDb.Customer
+const Shift = sequelizeDb.Shift
+const User = sequelizeDb.User
 const Op = sequelizeDb.Sequelize.Op
 
 exports.create = async (req, res, next) => {
   try {
-    const data = await Customer.create(req.body)
-    req.redisClient.publish('new-customer', JSON.stringify(data))
+    const data = await Shift.create(req.body)
     res.status(200).send(data)
   } catch (err) {
     if (err.name === 'SequelizeValidationError') {
@@ -32,9 +32,16 @@ exports.findAll = async (req, res, next) => {
       ? { [Op.and]: [whereStatement] }
       : {}
 
-    const result = await Customer.findAndCountAll({
+    const result = await Shift.findAndCountAll({
       where: condition,
-      attributes: ['id', 'name', 'email', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'user_id', 'date', 'start_time', 'end_time', 'total_minutes', 'createdAt', 'updatedAt'],
+      include: [
+        {
+          model: User,
+          as: 'User',
+          attributes: ['name']
+        }
+      ],
       limit,
       offset,
       order: [['createdAt', 'DESC']]
@@ -56,7 +63,15 @@ exports.findAll = async (req, res, next) => {
 exports.findOne = async (req, res, next) => {
   try {
     const id = req.params.id
-    const data = await Customer.findByPk(id)
+    const data = await Shift.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: 'User',
+          attributes: ['name']
+        }
+      ]
+    })
 
     if (!data) {
       const err = new Error()
@@ -74,7 +89,7 @@ exports.findOne = async (req, res, next) => {
 exports.update = async (req, res, next) => {
   try {
     const id = req.params.id
-    const [numberRowsAffected] = await Customer.update(req.body, { where: { id } })
+    const [numberRowsAffected] = await Shift.update(req.body, { where: { id } })
 
     if (numberRowsAffected !== 1) {
       const err = new Error()
@@ -98,7 +113,7 @@ exports.update = async (req, res, next) => {
 exports.delete = async (req, res, next) => {
   try {
     const id = req.params.id
-    const numberRowsAffected = await Customer.destroy({ where: { id } })
+    const numberRowsAffected = await Shift.destroy({ where: { id } })
 
     if (numberRowsAffected !== 1) {
       const err = new Error()

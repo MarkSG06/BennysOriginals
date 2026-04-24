@@ -2,7 +2,12 @@ const express = require('express')
 const router = express.Router()
 const controller = require('../../controllers/admin/user-controller.js')
 
+const auth = require('../../middlewares/auth.js')
+
 router.post('/login', controller.login)
+
+router.use(auth)
+
 router.post('/', controller.create)
 router.get('/', controller.findAll)
 router.get('/:id', controller.findOne)

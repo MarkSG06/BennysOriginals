@@ -5,13 +5,21 @@ class PageComponent extends HTMLElement {
     this.basePath = this.getAttribute('base-path') || ''
   }
 
-  connectedCallback() {
-    this.checkSignin()
+  async connectedCallback() {
+    const canContinue = await this.checkSignin()
+
+    if (!canContinue) return
+
     this.render()
+
     window.onpopstate = () => this.handleRouteChange()
   }
 
-  handleRouteChange() {
+  async handleRouteChange() {
+    const canContinue = await this.checkSignin()
+
+    if (!canContinue) return
+
     this.render()
   }
 
@@ -21,32 +29,27 @@ class PageComponent extends HTMLElement {
   }
 
   async checkSignin() {
-    try {
-      const result = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/customer/check-signin`, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+    const publicRoutes = ['/', '/login', '/404']
+    const currentPath = window.location.pathname
+    const token = localStorage.getItem('token')
 
-      if (!result.ok) {
-        const data = await result.json()
-
-        if (window.location.pathname !== data.redirection) {
-          const publicRoutes = ['/', '/login', '/404']
-          if (publicRoutes.includes(window.location.pathname)) return
-
-          window.location.href = data.redirection
-        }
-      }
-    } catch (error) {
-      console.log(error)
+    if (publicRoutes.includes(currentPath)) {
+      return true
     }
+
+    if (!token) {
+      window.location.href = '/'
+      return false
+    }
+
+    return true
   }
 
   async getTemplate(path) {
     const routes = {
       '/': 'home.html',
       '/fichajes': 'fichajes.html',
+      '/dashboard': 'dashboard.html',
       '/404': '404.html',
     }
 

@@ -1,6 +1,10 @@
 const express = require('express')
 const router = express.Router()
-const controller = require('../../controllers/admin/customer-controller.js')
+const controller = require('../../controllers/admin/shift-controller.js')
+
+const auth = require('../../middlewares/auth.js')
+
+router.use(auth)
 
 router.post('/', controller.create)
 router.get('/', controller.findAll)

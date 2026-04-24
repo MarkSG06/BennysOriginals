@@ -98,7 +98,8 @@ class DeleteModal extends HTMLElement {
         const response = await fetch(this.endpoint, {
           method: 'DELETE',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
         })
 

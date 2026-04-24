@@ -15,20 +15,17 @@ module.exports = function (sequelize, DataTypes) {
         type: DataTypes.STRING,
         allowNull: false
       },
-      email: {
+      role: {
         type: DataTypes.STRING,
-        allowNull: false,
-        validate: {
-          isEmail: {
-            msg: 'Debe ser um e-mail válido'
-          },
-          notNull: {
-            msg: 'Por favor, rellena el campo "Email".'
-          },
-          notEmpty: {
-            msg: 'Por favor, rellena el campo "Email".'
-          }
-        }
+        allowNull: false
+      },
+      job_position_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+      },
+      token: {
+        type: DataTypes.STRING,
+        allowNull: true
       },
       createdAt: {
         type: DataTypes.DATE,

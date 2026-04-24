@@ -2,7 +2,8 @@
   "dependencies": {
     "express": "^5",
     "http-proxy-middleware": "^2.0.6",
-    "ioredis": "^5.8.2"
+    "ioredis": "^5.8.2",
+    "jsonwebtoken": "^9.0.3"
   },
   "scripts": {
     "dev": "npm-run-all --parallel dev:front-admin dev:auth-admin dev:front-customer dev:auth-customer dev:auth proxy",

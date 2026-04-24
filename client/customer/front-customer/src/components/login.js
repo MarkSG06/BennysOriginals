@@ -1,16 +1,16 @@
 class Login extends HTMLElement {
-  constructor() {
-    super()
-    this.shadow = this.attachShadow({ mode: 'open' })
-    this.endpoint = '/api/admin/users/login'
-  }
+    constructor() {
+        super()
+        this.shadow = this.attachShadow({ mode: 'open' })
+        this.endpoint = '/api/admin/users/login'
+    }
 
-  async connectedCallback() {
-    await this.render()
-  }
+    async connectedCallback() {
+        await this.render()
+    }
 
-  render() {
-    this.shadow.innerHTML =
+    render() {
+        this.shadow.innerHTML =
     /* html */`
     <style>
       * {
@@ -162,40 +162,39 @@ class Login extends HTMLElement {
             <form>
                 <input type="text" placeholder="Ingresa tu usuario">
                 <input type="password" placeholder="Ingresa tu contraseña">
-                <div class="options">
-                    <div class="remember">
-                        <input type="checkbox" id="remember">
-                        <label for="remember">Recordarme</label>
-                    </div>
-                </div>
                 <button type="submit">Iniciar Sesión</button>
             </form>
         </div>
     </section>
     `
-    this.formEvent()
-  }
+        this.formEvent()
+    }
 
-  formEvent() {
-    this.shadow.querySelector('form').addEventListener('submit', async (event) => {
-      event.preventDefault()
-      const name = this.shadow.querySelector('input[type="text"]').value
-      const password = this.shadow.querySelector('input[type="password"]').value
-      const response = await fetch(this.endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name,
-          password
+    formEvent() {
+        this.shadow.querySelector('form').addEventListener('submit', async (event) => {
+            event.preventDefault()
+
+            const name = this.shadow.querySelector('input[type="text"]').value
+            const password = this.shadow.querySelector('input[type="password"]').value
+
+            const response = await fetch(this.endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name,
+                    password
+                })
+            })
+
+            const data = await response.json()
+            if (response.status === 200 && data.token) {
+                localStorage.setItem('token', data.token)
+                window.location.href = '/fichajes'
+            }
         })
-      })
-      if (response.status === 200) {
-        window.location.href = '/fichajes'
-      }
-    })
-  }
+    }
 }
 
 customElements.define('login-component', Login)
