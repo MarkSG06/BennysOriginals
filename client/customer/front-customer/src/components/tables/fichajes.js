@@ -2,6 +2,15 @@ class TableFichajes extends HTMLElement {
     constructor() {
         super()
         this.shadow = this.attachShadow({ mode: 'open' })
+
+        this.currentShiftId = localStorage.getItem('currentShiftId') || null
+        this.shiftStartTime = localStorage.getItem('shiftStartTime')
+            ? new Date(localStorage.getItem('shiftStartTime'))
+            : null
+
+        this.timerInterval = null
+        this.accumulatedMsToday = 0
+        this.data = { rows: [] }
     }
 
     async connectedCallback() {
@@ -42,6 +51,12 @@ class TableFichajes extends HTMLElement {
     }
 
     render() {
+        const userId = this.getUserId()
+
+        if (!userId) {
+            window.location.href = '/login'
+            return
+        }
 
         this.shadow.innerHTML =
     /* html */`
@@ -392,6 +407,156 @@ class TableFichajes extends HTMLElement {
         </div>
     </div>
     `
+
+        const startBtn = this.shadow.querySelector('.btn.start');
+        const endBtn = this.shadow.querySelector('.btn.end');
+        const timerSpan = this.shadow.querySelector('.titleService span');
+
+        const updateTimerDisplay = () => {
+            let totalMs = this.accumulatedMsToday || 0;
+            if (this.currentShiftId && this.shiftStartTime) {
+                totalMs += (new Date() - this.shiftStartTime);
+            }
+
+            const h = String(Math.floor(totalMs / 3600000)).padStart(2, '0');
+            const m = String(Math.floor((totalMs % 3600000) / 60000)).padStart(2, '0');
+            timerSpan.textContent = `${h}h ${m}m`;
+        };
+
+        const loadTodayAccumulated = async () => {
+            try {
+                const now = new Date()
+                const today = now.toISOString().split('T')[0]
+
+                const response = await fetch(`/api/admin/shifts?user_id=${userId}&size=100`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                })
+
+                const data = await response.json()
+
+                let accumulatedMs = 0
+
+                if (data.rows) {
+                    const todayShifts = data.rows.filter(s =>
+                        s.date &&
+                        s.date.startsWith(today) &&
+                        s.total_minutes &&
+                        s.id != this.currentShiftId
+                    )
+
+                    todayShifts.forEach(s => {
+                        const parts = s.total_minutes.split(':')
+                        const h = parseInt(parts[0]) || 0
+                        const m = parseInt(parts[1]) || 0
+                        accumulatedMs += (h * 3600000) + (m * 60000)
+                    })
+                }
+
+                this.accumulatedMsToday = accumulatedMs
+                updateTimerDisplay()
+            } catch (error) {
+                console.error('Error loading accumulated time', error)
+            }
+        }
+
+        const startShiftTimer = () => {
+            if (this.timerInterval) clearInterval(this.timerInterval);
+            this.timerInterval = setInterval(updateTimerDisplay, 1000);
+        };
+
+        if (this.currentShiftId && this.shiftStartTime) {
+            startBtn.classList.add('hide');
+            endBtn.classList.remove('hide');
+            startShiftTimer();
+        } else {
+            startBtn.classList.remove('hide');
+            endBtn.classList.add('hide');
+        }
+
+        loadTodayAccumulated();
+
+        startBtn.addEventListener('click', async () => {
+            const now = new Date();
+            const date = now.toISOString().split('T')[0];
+            const start_time = now.toTimeString().split(' ')[0];
+
+            try {
+                const response = await fetch('/api/admin/shifts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        date: date,
+                        start_time: start_time
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    this.currentShiftId = data.id;
+                    localStorage.setItem('currentShiftId', data.id);
+                    this.shiftStartTime = now;
+                    localStorage.setItem('shiftStartTime', now.toISOString());
+
+                    startBtn.classList.add('hide');
+                    endBtn.classList.remove('hide');
+                    startShiftTimer();
+
+                    document.dispatchEvent(new CustomEvent('refreshShiftsTable'));
+                }
+            } catch (error) {
+                console.error('Error al fichar entrada:', error);
+            }
+        });
+
+        endBtn.addEventListener('click', async () => {
+            if (!this.currentShiftId) return;
+
+            const now = new Date();
+            const end_time = now.toTimeString().split(' ')[0];
+
+            const diffMs = now - this.shiftStartTime;
+            const diffMins = Math.floor(diffMs / 60000);
+            const hours = String(Math.floor(diffMins / 60)).padStart(2, '0');
+            const minutes = String(diffMins % 60).padStart(2, '0');
+            const total_minutes = `${hours}:${minutes}`;
+
+            try {
+                const response = await fetch(`/api/admin/shifts/${this.currentShiftId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        end_time: end_time,
+                        total_minutes: total_minutes
+                    })
+                });
+
+                if (response.ok) {
+                    this.currentShiftId = null;
+                    this.shiftStartTime = null;
+                    localStorage.removeItem('currentShiftId');
+                    localStorage.removeItem('shiftStartTime');
+                    clearInterval(this.timerInterval);
+
+                    loadTodayAccumulated();
+
+                    endBtn.classList.add('hide');
+                    startBtn.classList.remove('hide');
+
+                    document.dispatchEvent(new CustomEvent('refreshShiftsTable'));
+                }
+            } catch (error) {
+                console.error('Error al fichar salida:', error);
+            }
+        });
 
         const tableBody = this.shadow.querySelector('.tableBody')
         const noData = this.shadow.querySelector('.noData')
